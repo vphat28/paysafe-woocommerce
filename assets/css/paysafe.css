@@ -1,0 +1,9 @@
+#mer_paysafe-token-form {
+
+	display: none;
+}
+
+.save_card_number
+{
+	display: block !important;
+}
