@@ -335,7 +335,7 @@
 	        // Include the paysafe payment files.
 	        include_once( dirname( __FILE__ ) . '/includes/card-token-payment.php' );
 			$order = wc_get_order( $order_id );
-	        $totalAmount=(int)str_replace(array(' ', ','), '', $order->total);
+	        $totalAmount = (float)str_replace(array(' ', ','), '', $order->total);
 	        $billing_first_name=str_replace( array(' ', '-' ), '', $_POST['billing_first_name'] );
 	        $billing_last_name=str_replace( array(' ', '-' ), '', $_POST['billing_last_name'] );
 	        $billing_phone=str_replace( array(' ', '-' ), '', $_POST['billing_phone'] );
