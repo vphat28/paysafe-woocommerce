@@ -79,6 +79,7 @@ class CardPaymentService
              'customerIp',
              'dupCheck',
              'description',
+             'profile',
              'authentication',
              'billingDetails',
              'shippingDetails',

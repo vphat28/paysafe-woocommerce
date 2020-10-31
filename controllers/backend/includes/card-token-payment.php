@@ -38,7 +38,7 @@
          * @param  $paysafeMethod
          * @return array
          */
-    	public function get_request_paysafe_url_cc( $order_id, $paysafeApiKeyId, $paysafeApiKeySecret, $paysafeAccountNumber, $environment, $totalAmount, $cardNumber, $cardMonth, $cardYear, $cardCvv, $billing_address_1, $billing_country, $billing_city, $billing_postcode, $currencyBaseUnitsMultiplier, $tokenRequest, $fname, $lname, $email,$paysafeMethod, $authCaptureSettlement) {
+    	public function get_request_paysafe_url_cc( $order_id, $paysafeApiKeyId, $paysafeApiKeySecret, $paysafeAccountNumber, $environment, $totalAmount, $cardNumber, $cardMonth, $cardYear, $cardCvv, $billing_address_1, $billing_country, $billing_city, $billing_postcode, $currencyBaseUnitsMultiplier, $tokenRequest, $fname, $lname, $email, $billing_phone, $paysafeMethod, $authCaptureSettlement) {
 
                 $environmentType = $environment=='LIVE' ? Environment::LIVE : Environment::TEST;
                 $settleWithAuth = $authCaptureSettlement=='yes' ? true : false;
@@ -110,11 +110,18 @@
                     							'year' => $cardYear
                     					 )
                     				 ),
+                    			   'customerIp' => $_SERVER['REMOTE_ADDR'],
+                    			   'profile' => array(
+                                       "firstName"=>$fname,
+    "lastName"=>$lname,
+    "email"=>$email,
+                                   ),
                     			   'billingDetails' => array(
                     	           "street" => $billing_address_1,
                     	           "city" => $billing_city,
                     	           "country" => $billing_country,
-                    			   'zip' => $billing_postcode
+                    			   'zip' => $billing_postcode,
+                    			   'phone' => $billing_phone,
                     			))));
                                 $responsearray=array('transaction_id'=>$auth->id,
                     		                     'status'=>$auth->status,

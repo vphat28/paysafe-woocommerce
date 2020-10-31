@@ -366,7 +366,7 @@
 	      	$expcardexp=explode('/',$cardNumberExpiry);
 	        $cardMonth=(int)str_replace(array(' ', ','), '', $expcardexp[0]);	       
 	        $cardYear=(int)str_replace(array(' ', ','), '', $expcardexp[1]);
-	        $paysafe_request=$paysafe_request_object->get_request_paysafe_url_cc($order_id, $paysafeApiKeyId, $paysafeApiKeySecret, $paysafeAccountNumber, $environment, $totalAmount, $cardNumber, $cardMonth, $cardYear, $cardCvv, $billing_address_1, $billing_country, $billing_city, $billing_postcode, $currencyBaseUnitsMultiplier, $tokenRequest, $billing_first_name, $billing_last_name, $billing_email,$paysafeMethod, $authCaptureSettlement);
+	        $paysafe_request=$paysafe_request_object->get_request_paysafe_url_cc($order_id, $paysafeApiKeyId, $paysafeApiKeySecret, $paysafeAccountNumber, $environment, $totalAmount, $cardNumber, $cardMonth, $cardYear, $cardCvv, $billing_address_1, $billing_country, $billing_city, $billing_postcode, $currencyBaseUnitsMultiplier, $tokenRequest, $billing_first_name, $billing_last_name, $billing_email, $billing_phone, $paysafeMethod, $authCaptureSettlement);
 
 	       } else {
 	            $tokenKeyId=str_replace( array(' ', '-' ), '', $_POST['mer_paysafe-token-number'] );
