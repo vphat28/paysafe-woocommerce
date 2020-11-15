@@ -39,8 +39,8 @@ function __PaysafeAutoloader($className)
 
     $classPath=dirname( __FILE__ )."/".$classPath;
 
-    if ($classFile = $classPath . '.php'){
-        require_once( $classFile );
+    if ($classFile = $classPath . '.php') {
+        include_once( $classFile );
     }
 }
 
