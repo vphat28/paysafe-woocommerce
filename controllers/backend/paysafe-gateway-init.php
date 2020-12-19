@@ -166,7 +166,7 @@ class Paysafe_Gateway_Init extends WC_Payment_Gateway {
       <input id="payment_method_cc" class="input-radio" name="mer_paysafe_payment_method"
              value="mer_paysafe_credit_card" data-order_button_text="" type="radio" checked="checked"
              onclick="paysafecc()">
-      <label for="payment_method_cc" onclick="paysafecc()"> Credit Card </label>
+      <label for="payment_method_cc" onclick="paysafecc()"><?php echo __('Credit Card'); ?></label>
         <?php
         $customer_orders = get_posts(array(
             'numberposts' => - 1,
@@ -186,7 +186,7 @@ class Paysafe_Gateway_Init extends WC_Payment_Gateway {
         if (is_user_logged_in() && ! empty($listcard) && $this->saved_cards == "yes") { ?>
           <input id="payment_method_token" class="input-radio" name="mer_paysafe_payment_method"
                  value="mer_paysafe_token" data-order_button_text="" type="radio" onclick="paysafetoken()">
-          <label for="payment_method_token" onclick="paysafetoken()"> Saved Card </label>
+          <label for="payment_method_token" onclick="paysafetoken()"><?php echo __('Saved Card'); ?></label>
         <?php } ?>
       <fieldset id="wc-<?php echo esc_attr($this->id); ?>-cc-form" class='wc-credit-card-form wc-payment-form'>
           <?php do_action('woocommerce_credit_card_form_start', $this->id); ?>
@@ -204,7 +204,9 @@ class Paysafe_Gateway_Init extends WC_Payment_Gateway {
             echo '<fieldset>' . $cvc_field . '</fieldset>';
         }
 
-
+        ?>
+        <input type="hidden" name="paysafe_threed_auth_id" id="paysafe_threed_auth_id"/>
+      <?php
     }
 
     /**
@@ -307,6 +309,16 @@ class Paysafe_Gateway_Init extends WC_Payment_Gateway {
                 'type'     => 'password',
                 'desc_tip' => __('This is the Transaction Key provided by Paysafe transaction key when you signed up for an account.', 'mer-paysafepayments-aim'),
             ),
+            'single_token_username'   => array(
+                'title'    => __('Single Use Token Username', 'mer-paysafepayments-aim'),
+                'type'     => 'password',
+                'desc_tip' => __('This is the public key to use in 3DS secure mode', 'mer-paysafepayments-aim'),
+            ),
+            'single_token_password'   => array(
+                'title'    => __('Single Use Token Password', 'mer-paysafepayments-aim'),
+                'type'     => 'password',
+                'desc_tip' => __('This is the public key to use in 3DS secure mode', 'mer-paysafepayments-aim'),
+            ),
 
 
             'acc_number' => array(
@@ -367,7 +379,14 @@ class Paysafe_Gateway_Init extends WC_Payment_Gateway {
                 'type'        => 'checkbox',
                 'description' => __('Place the payment gateway in test mode.', 'mer-paysafepayments-aim'),
                 'default'     => 'no',
-            )
+            ),
+
+            'threedsecure' => array(
+                'title'       => __('3DS version 2', 'mer-paysafepayments-aim'),
+                'label'       => __('Enable 3DS version 2', 'mer-paysafepayments-aim'),
+                'type'        => 'checkbox',
+                'default'     => 'no',
+            ),
         );
 
 

@@ -1,6 +1,6 @@
 <?php 
 
-
+require_once MER_PAYSAFE_DIR . '/controllers/class-paysafe-threedsecure.php';
 
 class Paysafe_Payments_Main {
 	/**
@@ -62,3 +62,4 @@ class Paysafe_Payments_Main {
 
 }
 new Paysafe_Payments_Main();
+new Paysafe_Threedsecure();
