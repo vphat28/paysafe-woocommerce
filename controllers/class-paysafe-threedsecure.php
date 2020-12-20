@@ -28,12 +28,12 @@ class Paysafe_Threedsecure {
 		  && !empty($option['single_token_username'])
 		  && !empty($option['single_token_password'])
 	  ) {
-		  $base64APIKey = base64_encode($option['single_token_username'] . ':' . $option['single_token_password']);
+		  $key = $option['single_token_username'] . ':' . $option['single_token_password'];
 	  } else {
 	    return null;
     }
 
-	  return $base64APIKey;
+	  return $key;
   }
 
 	public function define_js_options() {
@@ -46,7 +46,7 @@ class Paysafe_Threedsecure {
 		$threedsecure = isset( $option['threedsecure'] ) ? $option['threedsecure'] : 'no';
 		$acc_number = isset( $option['acc_number'] ) ? $option['acc_number'] : '';
 		$testmode = isset( $option['environment'] ) ? $option['environment'] : 'no';
-	  $base64APIKey = $this->getSingleUseToken();
+	  $base64APIKey = base64_encode($this->getSingleUseToken());
 		?>
       <script>
           window.PaysafeWooCommerceIntegrationOption = {
@@ -121,7 +121,7 @@ class Paysafe_Threedsecure {
 	 */
 	public function paysafe_threedsecure_authentication() {
 		if (isset($_POST)) {
-		  require_once MER_PAYSAFE_BASE . '/helpers/class-simple-client.php';
+		  require_once MER_PAYSAFE_DIR . '/helpers/class-simple-client.php';
 		$request = $_POST;
 		$woocommerce = WC();
     $cart = $woocommerce->cart;
@@ -165,9 +165,7 @@ class Paysafe_Threedsecure {
 		$client = new Paysafe_Simple_Http_Client();
 		$response = $client->request('POST', $url, $options);
 
-
-		$bodyContent = $response->getBody()->getContents();
-		$object      = json_decode($bodyContent, true);
+		$object      = json_decode($response, true);
 
 		$this->logger->debug('Got 3ds authentication response', $object);
 

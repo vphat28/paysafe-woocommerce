@@ -19,7 +19,7 @@ class Paysafe_Simple_Http_Client {
 			CURLOPT_FOLLOWLOCATION => true,
 			CURLOPT_HTTP_VERSION   => CURL_HTTP_VERSION_1_1,
 			CURLOPT_CUSTOMREQUEST  => 'POST',
-			CURLOPT_POSTFIELDS     => $json,
+			CURLOPT_POSTFIELDS     => is_array($json) ? json_encode($json) : $json,
 			CURLOPT_HTTPHEADER     => array(
 				'Authorization: ' . $header,
 				'Content-Type: application/json',
