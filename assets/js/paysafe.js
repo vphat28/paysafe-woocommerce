@@ -62,6 +62,32 @@ jQuery(function($) {
 
             $('#place_order').click();
         },
+
+        doChallenge: function (id) {
+            var self = this;
+            var url = PaysafeWooCommerceIntegrationOption.challenge_endpoint;
+            var request = $.ajax({
+                url: url,
+                method: "POST",
+                dataType: "json",
+                data: {
+                    "id": id,
+                }
+            })
+                .done(function (data) {
+                    if (data.status === 'threed2completed') {
+                        fullScreenLoader.stopLoader();
+                        self.eci = data.dataLoad.eci;
+                        self.cavv = data.dataLoad.cavv;
+                        self.threed_id = data.dataLoad.id;
+                        return self.placeOrder();
+                    } else {
+                        alert('Error in 3DS version 2');
+                        fullScreenLoader.stopLoader();
+                    }
+                });
+        },
+
         device_finger_printing: function () {
             fullScreenLoader.startLoader();
             var paysafe3ds = window.paysafe;
