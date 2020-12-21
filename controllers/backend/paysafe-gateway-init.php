@@ -473,6 +473,8 @@ class Paysafe_Gateway_Init extends WC_Payment_Gateway {
 				throw new Exception( __( 'Unauthenticated transaction' ) );
 			}
 
+			$threed_auth_data = null;
+
 			if ( ! empty( $threed_auth_id ) ) {
 				$threed_auth_data = [];
 				$quoteId          = $order->get_id();
@@ -489,7 +491,10 @@ class Paysafe_Gateway_Init extends WC_Payment_Gateway {
 
 				$threed_auth_data['xid'] = $auth3dID;
 				$threed_auth_data['eci'] = $authResponse['eci'];
+				$threed_auth_data['cavv'] = $authResponse['cavv'];
 			}
+		} else {
+			$threed_auth_data = null;
 		}
 
 		if ( $paysafeMethod == "mer_paysafe_credit_card" ) {
@@ -497,7 +502,7 @@ class Paysafe_Gateway_Init extends WC_Payment_Gateway {
 			$expcardexp      = explode( '/', $cardNumberExpiry );
 			$cardMonth       = (int) str_replace( array( ' ', ',' ), '', $expcardexp[0] );
 			$cardYear        = (int) str_replace( array( ' ', ',' ), '', $expcardexp[1] );
-			$paysafe_request = $paysafe_request_object->get_request_paysafe_url_cc( $order_id, $paysafeApiKeyId, $paysafeApiKeySecret, $paysafeAccountNumber, $environment, $totalAmount, $cardNumber, $cardMonth, $cardYear, $cardCvv, $billing_address_1, $billing_country, $billing_city, $billing_postcode, $currencyBaseUnitsMultiplier, $tokenRequest, $billing_first_name, $billing_last_name, $billing_email, $billing_phone, $paysafeMethod, $authCaptureSettlement );
+			$paysafe_request = $paysafe_request_object->get_request_paysafe_url_cc( $order_id, $paysafeApiKeyId, $paysafeApiKeySecret, $paysafeAccountNumber, $environment, $totalAmount, $cardNumber, $cardMonth, $cardYear, $cardCvv, $billing_address_1, $billing_country, $billing_city, $billing_postcode, $currencyBaseUnitsMultiplier, $tokenRequest, $billing_first_name, $billing_last_name, $billing_email, $billing_phone, $paysafeMethod, $authCaptureSettlement, $threed_auth_data );
 
 		} else {
 			$tokenKeyId      = str_replace( array( ' ', '-' ), '', $_POST['mer_paysafe-token-number'] );

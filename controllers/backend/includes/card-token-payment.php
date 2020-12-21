@@ -40,7 +40,7 @@ class WC_Gateway_Paysafe_Request {
 	 *
 	 * @return array
 	 */
-	public function get_request_paysafe_url_cc( $order_id, $paysafeApiKeyId, $paysafeApiKeySecret, $paysafeAccountNumber, $environment, $totalAmount, $cardNumber, $cardMonth, $cardYear, $cardCvv, $billing_address_1, $billing_country, $billing_city, $billing_postcode, $currencyBaseUnitsMultiplier, $tokenRequest, $fname, $lname, $email, $billing_phone, $paysafeMethod, $authCaptureSettlement ) {
+	public function get_request_paysafe_url_cc( $order_id, $paysafeApiKeyId, $paysafeApiKeySecret, $paysafeAccountNumber, $environment, $totalAmount, $cardNumber, $cardMonth, $cardYear, $cardCvv, $billing_address_1, $billing_country, $billing_city, $billing_postcode, $currencyBaseUnitsMultiplier, $tokenRequest, $fname, $lname, $email, $billing_phone, $paysafeMethod, $authCaptureSettlement, $threed_auth_data = null ) {
 
 		$environmentType = $environment == 'LIVE' ? Environment::LIVE : Environment::TEST;
 		$settleWithAuth  = $authCaptureSettlement == 'yes' ? true : false;
@@ -100,8 +100,7 @@ class WC_Gateway_Paysafe_Request {
 				return $responsearray;
 
 			} else {
-
-				$auth          = $client->cardPaymentService()->authorize( new Authorization( array(
+				$auth_params = array(
 					'merchantRefNum' => $order_id . '_' . date( 'm/d/Y h:i:s a', time() ),
 					'amount'         => $totalAmount * $currencyBaseUnitsMultiplier,
 					'settleWithAuth' => $settleWithAuth,
@@ -126,7 +125,14 @@ class WC_Gateway_Paysafe_Request {
 						'zip'     => $billing_postcode,
 						'phone'   => $billing_phone,
 					)
-				) ) );
+				);
+
+				// Verify 3ds
+				if (!empty($threed_auth_data)) {
+					$auth_params['authentication'] = $threed_auth_data;
+				}
+
+				$auth          = $client->cardPaymentService()->authorize( new Authorization( $auth_params ) );
 				$responsearray = array(
 					'transaction_id' => $auth->id,
 					'status'         => $auth->status,
@@ -209,9 +215,10 @@ class WC_Gateway_Paysafe_Request {
 					foreach ( $e->fieldErrors as $message ) {
 						$failedMessage .= $message['field'] . "-->" . $message['error'] . "<br>";
 					}
-					$responsearray = array( 'status'       => "failed",
-					                        'responsecode' => 1,
-					                        'errormessage' => $failedMessage
+					$responsearray = array(
+						'status'       => "failed",
+						'responsecode' => 1,
+						'errormessage' => $failedMessage
 					);
 				}
 			} else {

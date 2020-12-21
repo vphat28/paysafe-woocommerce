@@ -40,6 +40,23 @@ class Paysafe_Threedsecure_Helper {
 	public function getAccountNumber() {
 		return isset ($this->options['acc_number']) ? $this->options['acc_number'] : null;
 	}
+	public function getSingleUseToken() {
+		$option = $this->options;
+		if (empty($option)) return null;
+
+		if (
+			isset($option['single_token_password'])
+			&& isset($option['single_token_username'])
+			&& !empty($option['single_token_username'])
+			&& !empty($option['single_token_password'])
+		) {
+			$key = $option['single_token_username'] . ':' . $option['single_token_password'];
+		} else {
+			return null;
+		}
+
+		return $key;
+	}
 	public function getThreeDResult($authID) {
 		if ($this->isTestMode()) {
 			$url = 'https://api.test.paysafe.com/threedsecure/v2/accounts/' . $this->getAccountNumber() . '/authentications';
