@@ -23,50 +23,75 @@ namespace Paysafe\CardPayments;
 /**
  * @property string $id
  * @property string $merchantRefNum
+ * @property int $amount
+ * @property bool $settleWithAuth
+ * @property int $availableToSettle
  * @property string $childAccountNum
  * @property \Paysafe\CardPayments\Card $card
+ * @property \Paysafe\CardPayments\Authentication $authentication
  * @property string $authCode
  * @property \Paysafe\CardPayments\Profile $profile
  * @property \Paysafe\CardPayments\BillingDetails $billingDetails
+ * @property \Paysafe\CardPayments\ShippingDetails $shippingDetails
+ * @property string $recurring
  * @property string $customerIp
- * @property string $dupCheck
+ * @property bool $dupCheck
+ * @property string[] $keywords
  * @property \Paysafe\CardPayments\MerchantDescriptor $merchantDescriptor
+ * @property \Paysafe\CardPayments\AccordD $accordD
  * @property string $description
+ * @property \Paysafe\CardPayments\MasterPass
  * @property string $txnTime
  * @property string $currencyCode
  * @property string $avsResponse
- * @property string $cvvVerification
+ * @property string $cvvVerication
  * @property string $status
  * @property int[] $riskReasonCode
- * @property \Paysafe\CardPayments\AcquirerResponse $acquirerResponse
+ * @property \Paysafe\CardPayments\AcquirerResponse $acquirerRresponse
+ * @property \Paysafe\CardPayments\VisaAdditionalAuthData $visaAdditionalAuthData
+ * @property \Paysafe\CardPayments\Settlement $settlements
  * @property \Paysafe\Error $error
  * @property \Paysafe\Link[] $links
+ * @property \Paysafe\CardPayments\SplitPay[] $splitpay
+ * @property \Paysafe\CardPayments\StoredCredential $storedCredential
  */
-class Verification extends \Paysafe\JSONObject implements \Paysafe\Pageable
+class Authorization extends \Paysafe\JSONObject implements \Paysafe\Pageable
 {
     public static function getPageableArrayKey()
     {
-        return 'verifications';
+        return 'auths';
     }
 
     protected static $fieldTypes = array(
          'id' => 'string',
          'merchantRefNum' => 'string',
+         'amount' => 'int',
+         'settleWithAuth' => 'bool',
+         'availableToSettle' => 'int',
          'childAccountNum' => 'string',
          'card' => '\Paysafe\CardPayments\Card',
+         'authentication' => '\Paysafe\CardPayments\Authentication',
          'authCode' => 'string',
          'profile' => '\Paysafe\CardPayments\Profile',
          'billingDetails' => '\Paysafe\CardPayments\BillingDetails',
+         'shippingDetails' => '\Paysafe\CardPayments\ShippingDetails',
+         'recurring' => array(
+              'INITIAL',
+              'RECURRING'
+         ),
          'customerIp' => 'string',
          'dupCheck' => 'bool',
+         'keywords' => 'array:string',
          'merchantDescriptor' => '\Paysafe\CardPayments\MerchantDescriptor',
+         'accordD' => '\Paysafe\CardPayments\AccordD',
          'description' => 'string',
+         'masterPass' => '\Paysafe\CardPayments\MasterPass',
          'txnTime' => 'string',
          'currencyCode' => 'string',
          'avsResponse' => array(
               'MATCH',
-              'PARTIAL_MATCH_ADDRESS',
-              'PARTIAL_MATCH_ZIP',
+              'MATCH_ADDRESS_ONLY',
+              'MATCH_ZIP_ONLY',
               'NO_MATCH',
               'NOT_PROCESSED',
               'UNKNOWN'
@@ -77,11 +102,21 @@ class Verification extends \Paysafe\JSONObject implements \Paysafe\Pageable
               'NOT_PROCESSED',
               'UNKNOWN'
          ),
-         'status' => 'string',
+         'status' => array(
+              'RECEIVED',
+              'COMPLETED',
+              'HELD',
+              'FAILED',
+              'CANCELLED'
+         ),
          'riskReasonCode' => 'array:int',
          'acquirerResponse' => '\Paysafe\CardPayments\AcquirerResponse',
+         'visaAdditionalAuthData' => '\Paysafe\CardPayments\VisaAdditionalAuthData',
+         'settlements' => 'array:\Paysafe\CardPayments\Settlement',
          'error' => '\Paysafe\Error',
-         'links' => 'array:\Paysafe\Link'
+         'links' => 'array:\Paysafe\Link',
+        'splitpay' => 'array:\Paysafe\CardPayments\SplitPay',
+        'storedCredential' => '\Paysafe\CardPayments\StoredCredential'
     );
 
 }

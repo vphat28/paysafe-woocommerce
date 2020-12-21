@@ -176,10 +176,19 @@ class PaysafeApiClient
     /**
      * Threed Secure  service.
      *
-     * @return \Paysafe\ThreedSecureService
+     * @return \Paysafe\ThreeDSecureService
      */
     public function threeDSecureService() {
         return new ThreeDSecureService($this);
+    }
+
+    /**
+     * Account Management  service.
+     *
+     * @return \Paysafe\AccountManagementService
+     */
+    public function accountManagementService() {
+        return new AccountManagementService($this);
     }
 
     /**
@@ -195,7 +204,8 @@ class PaysafeApiClient
              CURLOPT_URL => $request->buildUrl($this->apiEndPoint),
              CURLOPT_HTTPHEADER => array(
                   'Authorization: Basic ' . base64_encode($this->keyID . ':' . $this->keyPassword),
-                  'Content-Type: application/json; charset=utf-8'
+                  'Content-Type: application/json; charset=utf-8',
+		  'SDK-Type: Paysafe_PHP_SDK'
              ),
              CURLOPT_RETURNTRANSFER => true,
              CURLOPT_SSL_VERIFYPEER => false,
@@ -208,9 +218,17 @@ class PaysafeApiClient
         }
         if ($request->method != Request::GET) {
             $jsonData = ($request->body?$request->body->toJson():"");
+
+            if (defined('CH_REFUND_REQUEST')) {
+                $jsonData = json_decode($jsonData);
+                $jsonData->dupCheck = false;
+                $jsonData = json_encode($jsonData);
+            }
+
             $opts[CURLOPT_CUSTOMREQUEST] = $request->method;
             $opts[CURLOPT_POSTFIELDS] = $jsonData;
             $opts[CURLOPT_HTTPHEADER][] = 'Content-Length: ' . strlen($jsonData);
+            file_put_contents(BP . '/var/log/paysafe.log', json_encode($jsonData). PHP_EOL, FILE_APPEND);
         }
         curl_setopt_array($curl, $opts);
         $response = curl_exec($curl);
@@ -238,13 +256,9 @@ class PaysafeApiClient
                     if (array_key_exists('links', $return['error'])) {
                         $error->links = $return['error']['links'];
                     }
-                    if (array_key_exists('message', $return['error'])) {
-                        $error->error_message = $return['error']['message'];
-                    }
                     if (array_key_exists('details', $return['error'])) {
                         $error->details = $return['error']['details'];
                     }
-                    
                 }
                 throw $error;
             }

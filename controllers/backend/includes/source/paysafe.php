@@ -31,16 +31,11 @@ if (!function_exists('curl_version')) {
     throw new Exception('CURL is required for the Paysafe SDK.');
 }
 
-
-
 function __PaysafeAutoloader($className)
 {
-    $classPath = strtolower(str_replace("\\", DIRECTORY_SEPARATOR, $className));
-
-    $classPath=dirname( __FILE__ )."/".$classPath;
-
-    if ($classFile = $classPath . '.php') {
-        include_once( $classFile );
+    $classPath = str_replace("\\", DIRECTORY_SEPARATOR, $className);
+    if (($classFile = realpath(__DIR__ . DIRECTORY_SEPARATOR . $classPath . '.php'))) {
+        require_once( $classFile );
     }
 }
 

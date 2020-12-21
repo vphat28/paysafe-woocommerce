@@ -76,17 +76,19 @@ class CardPaymentService
         ));
         $auth->setOptionalFields(array(
              'settleWithAuth',
+	     'profile',	
              'customerIp',
              'dupCheck',
              'description',
-             'profile',
              'authentication',
              'billingDetails',
              'shippingDetails',
              'recurring',
              'merchantDescriptor',
              'accordD',
-             'description'
+             'description',
+             'splitpay',
+	     'storedCredential'
         ));
 
         $request = new Request(array(
@@ -190,7 +192,8 @@ class CardPaymentService
         $settlement->setRequiredFields(array('merchantRefNum'));
         $settlement->setOptionalFields(array(
              'amount',
-             'dupCheck'
+             'dupCheck',
+             'splitpay',
         ));
 
         $request = new Request(array(
@@ -242,7 +245,7 @@ class CardPaymentService
         $refund->setRequiredFields(array('merchantRefNum'));
         $refund->setOptionalFields(array(
              'amount',
-             'dupCheck'
+             'splitpay',
         ));
 
         $request = new Request(array(
