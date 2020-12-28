@@ -168,11 +168,7 @@ class Paysafe_Threedsecure {
 			$this->logger->debug( '3ds authentication result', $authResponse );
 
 			$options['json'] = [
-				"authentication" => [
-					"eci"                 => $authResponse["eci"],
-					"threeDResult"        => "Y",
-					"threeDSecureVersion" => "2.1.0",
-				],
+				"authentication" => [],
 			];
 
 			if ( isset( $authResponse['cavv'] ) ) {

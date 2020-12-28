@@ -408,6 +408,11 @@ class Paysafe_Gateway_Init extends WC_Payment_Gateway {
 			$this->order_complete();
 			wc_reduce_stock_levels( $order_id );
 			WC()->cart->empty_cart();
+
+			if ( $this->auth_capture_settlement == 'no' ) {
+				$this->order->update_status( 'on-hold', sprintf( __( 'Paysafe charge authorized. Process order to take payment' ) ) );
+			}
+
 			$result = array(
 				'result'   => 'success',
 				'redirect' => $this->get_return_url( $this->order )
@@ -489,8 +494,8 @@ class Paysafe_Gateway_Init extends WC_Payment_Gateway {
 					throw new Exception( __( 'Cheat!' ) );
 				}
 
-				$threed_auth_data['xid'] = $auth3dID;
-				$threed_auth_data['eci'] = $authResponse['eci'];
+				$threed_auth_data['xid']  = $auth3dID;
+				$threed_auth_data['eci']  = $authResponse['eci'];
 				$threed_auth_data['cavv'] = $authResponse['cavv'];
 			}
 		} else {
