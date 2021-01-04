@@ -173,6 +173,18 @@ jQuery(function($) {
         },
         addEventListeners: function () {
             var self = this;
+
+            $('.checkout.woocommerce-checkout').on('checkout_place_order', function () {
+                if (jQuery('[name=payment_method]:checked').val() == 'mer_paysafe') {
+                    if (self.threed_id == null || PaysafeWooCommerceIntegrationOption.threedsecurepaysafe == 'no') {
+                        $('#paysafe_place_order').click();
+                        return false;
+                    }
+                }
+
+                return true;
+            });
+
             $(document).on('payment_method_selected', function () {
                 var selected_payment = jQuery('.woocommerce-checkout input[name="payment_method"]:checked').attr("id");
 
@@ -197,7 +209,10 @@ jQuery(function($) {
                     return;
                 }
                 fullScreenLoader.startLoader();
-                self.device_finger_printing();
+
+                if (PaysafeWooCommerceIntegrationOption.threedsecurepaysafe == 'yes') {
+                    self.device_finger_printing();
+                }
             });
         }
     }
