@@ -154,13 +154,31 @@ jQuery(function($) {
                                 fullScreenLoader.stopLoader();
                             }
                         })
-                        .error(function (data) {
-                            alert('Gateway error: ' + data.statusText);
-                            console.log(data);
+                        .error(function (data, textStatus, errorThrown) {
+                            self.submit_error('<div class="woocommerce-error">' + data.responseJSON.message + '</div>');
                             fullScreenLoader.stopLoader();
                         })
                 ;
             });
+        },
+
+        submit_error: function( error_message ) {
+            var wc_checkout_form = this.$checkout_form;
+            $( '.woocommerce-NoticeGroup-checkout, .woocommerce-error, .woocommerce-message' ).remove();
+            wc_checkout_form.prepend( '<div class="woocommerce-NoticeGroup woocommerce-NoticeGroup-checkout">' + error_message + '</div>' ); // eslint-disable-line max-len
+            wc_checkout_form.removeClass( 'processing' ).unblock();
+            wc_checkout_form.find( '.input-text, select, input:checkbox' ).trigger( 'validate' ).blur();
+            this.scroll_to_notices();
+            $( document.body ).trigger( 'checkout_error' , [ error_message ] );
+        },
+
+        scroll_to_notices: function() {
+            var scrollElement           = $( '.woocommerce-NoticeGroup-updateOrderReview, .woocommerce-NoticeGroup-checkout' );
+
+            if ( ! scrollElement.length ) {
+                scrollElement = $( '.form.checkout' );
+            }
+            $.scroll_to_notices( scrollElement );
         },
         showPaysafeButton: function () {
             $('#place_order').hide();

@@ -313,6 +313,14 @@ class Paysafe_Threedsecure {
 				$jsonResult->three_d_auth = $object;
 			}
 
+            if ($object["status"] === 'FAILED' ) {
+                wp_send_json(['message' => __('3DS failed.')], 404);
+            }
+
+			if (!isset($jsonResult->status)) {
+                wp_send_json(['message' => __('Gateway Error. Please contact your bank.')], 404);
+            }
+
 			wp_send_json( $jsonResult );
 		}
 	}
