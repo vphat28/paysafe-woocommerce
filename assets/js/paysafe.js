@@ -56,6 +56,11 @@ jQuery(function($) {
             return false;
         },
         placeOrder: function () {
+            if (window.PaysafeWooCommerceIntegrationOption.threedsecurepaysafe == 'no') {
+                $('#place_order').click();
+                return;
+            }
+
             if (this.threed_id !== null) {
                 $('#paysafe_threed_auth_id').val(this.threed_id);
             }
@@ -193,6 +198,9 @@ jQuery(function($) {
             var self = this;
 
             $('.checkout.woocommerce-checkout').on('checkout_place_order', function () {
+                if (PaysafeWooCommerceIntegrationOption.threedsecurepaysafe != 'yes') {
+                    return true;
+                }
                 if (jQuery('[name=payment_method]:checked').val() == 'mer_paysafe') {
                     if (self.threed_id == null || PaysafeWooCommerceIntegrationOption.threedsecurepaysafe == 'no') {
                         $('#paysafe_place_order').click();
@@ -230,6 +238,8 @@ jQuery(function($) {
 
                 if (PaysafeWooCommerceIntegrationOption.threedsecurepaysafe == 'yes') {
                     self.device_finger_printing();
+                } else {
+                    self.placeOrder();
                 }
             });
         }
