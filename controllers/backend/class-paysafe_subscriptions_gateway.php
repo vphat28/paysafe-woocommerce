@@ -29,6 +29,25 @@ class Paysafe_Subscriptions_Gateway extends Paysafe_Gateway_Init {
 			'scheduled_subscription_payment'
 		), 10, 2 );
 
+		add_action('woocommerce_payment_complete', [$this, 'update_subscription_order']);
+	}
+
+	public function update_subscription_order($order_id) {
+		if (!function_exists( 'wcs_order_contains_subscription' )) {
+			return;
+		}
+
+		$order = wc_get_order($order_id);
+		$subscriptions = wcs_get_subscriptions_for_order($order_id);
+		$is_subscription = wcs_order_contains_subscription($order_id);
+
+		if (!$is_subscription) {
+			return;
+		}
+
+		foreach ($subscriptions as $subscription) {
+			$subscription->payment_complete();
+		}
 	}
 
 
@@ -123,7 +142,7 @@ class Paysafe_Subscriptions_Gateway extends Paysafe_Gateway_Init {
 				return true;
 			} else {
 
-				update_post_meta( $order->get_id(), '_paysafe_status_error', $errormessage );
+				update_post_meta( $order->get_id(), '_paysafe_status_error', print_r($paysafe_request, 1) );
 
 				return false;
 			}

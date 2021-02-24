@@ -56,6 +56,10 @@ jQuery(function($) {
             return false;
         },
         placeOrder: function () {
+            if ($('#payment_method_token').is(':checked') == true) {
+                $('#place_order').click();
+            }
+
             if (window.PaysafeWooCommerceIntegrationOption.threedsecurepaysafe == 'no') {
                 $('#place_order').click();
                 return;
@@ -198,6 +202,10 @@ jQuery(function($) {
             var self = this;
 
             $('.checkout.woocommerce-checkout').on('checkout_place_order', function () {
+                if ($('#payment_method_token').is(':checked') == true) {
+                    return true;
+                }
+
                 if (PaysafeWooCommerceIntegrationOption.threedsecurepaysafe != 'yes') {
                     return true;
                 }
@@ -235,6 +243,11 @@ jQuery(function($) {
                     return;
                 }
                 fullScreenLoader.startLoader();
+
+                if ($('#payment_method_token').is(':checked') == true) {
+                    self.placeOrder();
+                    return;
+                }
 
                 if (PaysafeWooCommerceIntegrationOption.threedsecurepaysafe == 'yes') {
                     self.device_finger_printing();

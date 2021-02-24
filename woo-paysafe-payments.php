@@ -3,7 +3,7 @@
 Plugin Name: Wocommerce Paysafe Payments Gateway
 Plugin URI: https://www.paysafe.com
 Description: Payment using Paysafe (Credit Card & Tokenisation) method.
-Version: 1.1
+Version: 1.2
 Author: Collinsharper
 Author URI: #
 */

@@ -11,6 +11,7 @@
  * @author      Paysafe
  */
 class Paysafe_Gateway_Init extends WC_Payment_Gateway {
+	/** @var WC_Order $order */
 	protected $order = null;
 	protected $form_data = null;
 	protected $transaction_id = null;
@@ -406,6 +407,7 @@ class Paysafe_Gateway_Init extends WC_Payment_Gateway {
 	public function process_payment( $order_id ) {
 		if ( $this->send_to_paysafe_gateway( $order_id ) ) {
 			$this->order_complete();
+			$this->order->payment_complete($this->transaction_id);
 			wc_reduce_stock_levels( $order_id );
 			WC()->cart->empty_cart();
 
@@ -471,7 +473,7 @@ class Paysafe_Gateway_Init extends WC_Payment_Gateway {
 			$tokenRequest = 'guestaccount';
 		}
 
-		if ( $this->threedsecure === 'yes' ) {
+		if ( $this->threedsecure === 'yes' && $paysafeMethod == "mer_paysafe_credit_card" ) {
 			$threed_auth_id = wc_clean( $_POST['paysafe_threed_auth_id'] );
 
 			if ( empty( $threed_auth_id ) ) {
