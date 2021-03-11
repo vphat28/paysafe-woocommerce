@@ -45,23 +45,24 @@ class Paysafe_Payments_Main {
 		$client                      = new \Paysafe\PaysafeApiClient( $paysafeApiKeyId, $paysafeApiKeySecret, $environmentType, $paysafeAccountNumber );
 		$order                       = wc_get_order( $order_id );
 		$amount                      = $order->get_total();
+		try {
+			$response = $client->cardPaymentService()->settlement( new \Paysafe\CardPayments\Settlement( array(
+				'merchantRefNum'    => $order->get_id() . '-capture-' . time(),
+				'authorizationID'   => $txn_id,
+				'status'            => 'COMPLETED',
+				'availableToRefund' => $amount * $currencyBaseUnitsMultiplier,
+				'amount'            => $amount * $currencyBaseUnitsMultiplier,
+			) ) );
 
-		$response = $client->cardPaymentService()->settlement( new \Paysafe\CardPayments\Settlement( array(
-			'merchantRefNum'    => $order->get_id() . '-capture-' . time(),
-			'authorizationID'   => $txn_id,
-			'status'            => 'COMPLETED',
-			'availableToRefund' => $amount * $currencyBaseUnitsMultiplier,
-			'amount'            => $amount * $currencyBaseUnitsMultiplier,
-		) ) );
+			add_post_meta( $order_id, 'paysafe_captured', true );
+			add_post_meta( $order_id, 'paysafe_charge_id', $response->id );
+			$order->add_order_note( sprintf( __( 'Paysafe charge complete (Charge ID: %s)' ), $response->id ) );
 
-		add_post_meta( $order_id, 'paysafe_captured', true );
-		add_post_meta( $order_id, 'paysafe_charge_id', $response->id );
-		$order->add_order_note( sprintf( __( 'Paysafe charge complete (Charge ID: %s)' ), $response->id ) );
-
-		if ( is_callable( array( $order, 'save' ) ) ) {
-			$order->save();
-		}
-		update_post_meta( $order_id, 'paysafe_captured', true );
+			if ( is_callable( array( $order, 'save' ) ) ) {
+				$order->save();
+			}
+			update_post_meta( $order_id, 'paysafe_captured', true );
+		} catch (Exception $e) {}
 	}
 
 	/**

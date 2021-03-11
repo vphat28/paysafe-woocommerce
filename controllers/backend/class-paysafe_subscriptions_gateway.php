@@ -29,23 +29,24 @@ class Paysafe_Subscriptions_Gateway extends Paysafe_Gateway_Init {
 			'scheduled_subscription_payment'
 		), 10, 2 );
 
-		add_action('woocommerce_payment_complete', [$this, 'update_subscription_order']);
+		add_action( 'woocommerce_payment_complete', [ $this, 'update_subscription_order' ] );
+		add_action( 'woocommerce_order_status_processing', array( $this, 'update_subscription_order' ) );
 	}
 
-	public function update_subscription_order($order_id) {
-		if (!function_exists( 'wcs_order_contains_subscription' )) {
+	public function update_subscription_order( $order_id ) {
+		if ( ! function_exists( 'wcs_order_contains_subscription' ) ) {
 			return;
 		}
 
-		$order = wc_get_order($order_id);
-		$subscriptions = wcs_get_subscriptions_for_order($order_id);
-		$is_subscription = wcs_order_contains_subscription($order_id);
+		$order           = wc_get_order( $order_id );
+		$subscriptions   = wcs_get_subscriptions_for_order( $order_id );
+		$is_subscription = wcs_order_contains_subscription( $order_id );
 
-		if (!$is_subscription) {
+		if ( ! $is_subscription ) {
 			return;
 		}
 
-		foreach ($subscriptions as $subscription) {
+		foreach ( $subscriptions as $subscription ) {
 			$subscription->payment_complete();
 		}
 	}
@@ -133,8 +134,9 @@ class Paysafe_Subscriptions_Gateway extends Paysafe_Gateway_Init {
 			$paysafe_request = $paysafe_request_object->get_request_paysafe_url_token( $paysafeApiKeyId, $paysafeApiKeySecret, $paysafeAccountNumber, $environment, $totalAmount, $currencyBaseUnitsMultiplier, $tokenKeyId, $authCaptureSettlement, $corder_id );
 
 			if ( $paysafe_request['responsecode'] == '0' ) {
-				$transactionID = $paysafe_request['transaction_id'];
-				$status        = $paysafe_request['status'];
+				$transactionID        = $paysafe_request['transaction_id'];
+				$this->transaction_id = $transactionID;
+				$status               = $paysafe_request['status'];
 				update_post_meta( $order->get_id(), '_paysafe_status', $status );
 				update_post_meta( $order->get_id(), '_paysafe_transaction_id', $transactionID );
 				$this->order_complete();
@@ -142,7 +144,7 @@ class Paysafe_Subscriptions_Gateway extends Paysafe_Gateway_Init {
 				return true;
 			} else {
 
-				update_post_meta( $order->get_id(), '_paysafe_status_error', print_r($paysafe_request, 1) );
+				update_post_meta( $order->get_id(), '_paysafe_status_error', print_r( $paysafe_request, 1 ) );
 
 				return false;
 			}
@@ -169,11 +171,16 @@ class Paysafe_Subscriptions_Gateway extends Paysafe_Gateway_Init {
 	 *
 	 * @return      void
 	 */
-	public function scheduled_subscription_payment( $amount_to_charge, $order, $product_id ) {
+	public function scheduled_subscription_payment( $amount_to_charge, $order, $product_id = '' ) {
 		$this->order = $order;
 
 		$charge = $this->process_subscription_payment( $amount_to_charge, $order );
 		if ( $charge ) {
+			$subscription_id = $this->order->get_meta( '_subscription_renewal' );
+			if ( ! empty( $subscription_id ) ) {
+				$subscription = wcs_get_subscription( $subscription_id );
+				$subscription->payment_complete( $this->transaction_id );
+			}
 			WC_Subscriptions_Manager::process_subscription_payments_on_order( $order );
 		} else {
 			WC_Subscriptions_Manager::process_subscription_payment_failure_on_order( $order, $product_id );
