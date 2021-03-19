@@ -2,6 +2,7 @@
 
 use \Paysafe_Gateway_Init as Gateway;
 
+include_once MER_PAYSAFE_DIR . '/controllers/backend/includes/config.php';
 require_once MER_PAYSAFE_DIR . '/helpers/class-threedsecure-helper.php';
 require_once MER_PAYSAFE_DIR . '/helpers/class-threedsecure-logger.php';
 
@@ -16,6 +17,98 @@ class Paysafe_Threedsecure {
 		add_action( 'wp_enqueue_scripts', [ $this, 'enqueue_scripts' ] );
 		add_action( 'woocommerce_after_checkout_form', [ $this, 'define_js_options' ] );
 		add_filter( 'woocommerce_order_button_html', [ $this, 'add_paysafe_checkout_button' ] );
+		add_action( 'wp_ajax_paysafe_woo_get_card' , array( $this, 'get_card' ) );
+		add_action( 'wp_ajax_nopriv_paysafe_woo_get_card' , array( $this, 'get_card' ) );
+	}
+
+	public function get_card_meta_from_token($token_id) {
+			$customer_orders = get_posts( array(
+				'numberposts' => - 1,
+				'meta_key'    => '_customer_user',
+				'meta_value'  => get_current_user_id(),
+				'post_type'   => wc_get_order_types(),
+				'post_status' => array_keys( wc_get_order_statuses() ),
+			) );
+
+			foreach ( $customer_orders as $oid ) {
+				if ( metadata_exists( 'post', $oid->ID, '_paysafe_token_card_info' ) ) {
+					$meta = get_post_meta( $oid->ID, '_paysafe_token_card_info', true );
+					wc_paysafe_log($meta);
+
+					if ($meta['paysafe_tokenno'] == $token_id) {
+						return $meta;
+					}
+				}
+			}
+	}
+
+	public function get_card_object_from_token($token_id) {
+		$customer_orders = get_posts( array(
+			'numberposts' => - 1,
+			'meta_key'    => '_customer_user',
+			'meta_value'  => get_current_user_id(),
+			'post_type'   => wc_get_order_types(),
+			'post_status' => array_keys( wc_get_order_statuses() ),
+		) );
+		$profile = '';
+		$cardId = '';
+
+		foreach ( $customer_orders as $oid ) {
+			if ( metadata_exists( 'post', $oid->ID, '_paysafe_token_card_info' ) ) {
+				$meta = get_post_meta( $oid->ID, '_paysafe_token_card_info', true );
+				wc_paysafe_log($meta);
+
+				if ($meta['paysafe_tokenno'] == $token_id) {
+					$profile = isset($meta['paysafe_profileid']) ? $meta['paysafe_profileid'] : null;
+					$cardId = isset($meta['paysafe_cardid']) ? $meta['paysafe_cardid'] : null;
+					break;
+				}
+			}
+		}
+
+		if (!empty($cardId) && !empty($profile)) {
+			$options = get_option('woocommerce_mer_paysafe_settings');
+			$paysafeApiKeyId             = $options['api_login'];
+			$paysafeApiKeySecret         = $options['trans_key'];
+			$paysafeAccountNumber        = $options['acc_number'];
+			$environment                 = ( $options['environment'] == "yes" ) ? \Paysafe\Environment::TEST : \Paysafe\Environment::LIVE;
+			try {
+				$client          = new \Paysafe\PaysafeApiClient(
+					$paysafeApiKeyId,
+					$paysafeApiKeySecret,
+					$environment, $paysafeAccountNumber
+				);
+
+
+				/** @var \Paysafe\CustomerVault\Card $cardObject */
+				$cardObject = $client->customerVaultService()->getCard( new \Paysafe\CustomerVault\Card(
+					[ 'profileID' => $profile, 'id' => $cardId ]
+				) );
+			} catch (\Exception $exception) {
+				wc_paysafe_log($exception->getMessage());
+			}
+
+			return $cardObject;
+		}
+
+		return null;
+	}
+
+	public function get_card_from_token($token_id) {
+		$card = $this->get_card_object_from_token($token_id);
+
+		if (!empty($card)) {
+			return $card->cardBin;
+		}
+
+		return null;
+	}
+
+	public function get_card() {
+		$token_id = sanitize_text_field($_POST['token_id']);
+		$cardBin = $this->get_card_from_token($token_id);
+
+		wp_die($cardBin);
 	}
 
 	public function getSingleUseToken() {
@@ -224,6 +317,14 @@ class Paysafe_Threedsecure {
 					'authenticationPurpose'  => 'PAYMENT_TRANSACTION',
 				],
 			];
+
+			if (isset($request['card']['paymentToken'])) {
+				$token_id = $request["card"]["paymentToken"];
+				$card_meta = $this->get_card_meta_from_token($token_id);
+				$options["json"]["card"] = [
+						'paymentToken' => $card_meta['paysafe_cardpaymenttoken']
+				];
+			}
 
 			if ( $this->helper->isTestMode() ) {
 				$url = 'https://api.test.paysafe.com/threedsecure/v2/accounts/' . $this->helper->getAccountNumber() . '/authentications';

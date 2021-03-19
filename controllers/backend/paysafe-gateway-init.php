@@ -198,6 +198,11 @@ class Paysafe_Gateway_Init extends WC_Payment_Gateway {
 			  echo $field;
 		  }
 		  ?>
+		  <p style="clear:both">
+			  <input id="paysafe_save_card_option" class="input-radio" name="paysafe_save_card_option"
+					 value="1" data-order_button_text="" type="checkbox">
+			  <label for="paysafe_save_card_option"><?php echo __('Save your card for future payment') ?></label>
+		  </p>
 		  <?php do_action( 'woocommerce_credit_card_form_end', $this->id ); ?>
         <div class="clear"></div>
       </fieldset>
@@ -429,7 +434,30 @@ class Paysafe_Gateway_Init extends WC_Payment_Gateway {
 			return false;
 		}
 	}
+	/**
+	 * Is $order_id a subscription?
+	 *
+	 * @param  int $order_id
+	 *
+	 * @return boolean
+	 */
+	protected function is_subscription( $order_id ) {
+		return ( function_exists( 'wcs_order_contains_subscription' ) && ( wcs_order_contains_subscription( $order_id ) || wcs_is_subscription( $order_id ) || wcs_order_contains_renewal( $order_id ) ) );
+	}
+	/**
+ * Is $order_id a subscription?
+ *
+ * @param  int $order_id
+ *
+ * @return boolean
+ */
+	protected function is_renewal( $order_id ) {
+		if (!function_exists( 'wcs_order_contains_subscription' ) ) {
+			return false;
+		}
 
+		return wcs_order_contains_renewal( $order_id );
+	}
 	/**
 	 * Send form data to paysafe
 	 * Handles the ApI, Credit Card Payments, Token
@@ -459,8 +487,9 @@ class Paysafe_Gateway_Init extends WC_Payment_Gateway {
 		$cardNumberExpiry       = str_replace( array( ' ', '-' ), '', $_POST['mer_paysafe-card-expiry'] );
 		$cardCvv                = str_replace( array( ' ', '-' ), '', $_POST['mer_paysafe-card-cvc'] );
 		$paysafeMethod          = $_POST['mer_paysafe_payment_method'];
+		$saveCardChecked        = isset($_POST['paysafe_save_card_option']) && !empty($_POST['paysafe_save_card_option']);
 		$paysafe_request_object = new WC_Gateway_Paysafe_Request;
-
+		$is_subscription = $this->is_subscription( $order_id );
 		$paysafeApiKeyId             = $this->api_login;
 		$paysafeApiKeySecret         = $this->trans_key;
 		$paysafeAccountNumber        = $this->acc_number;
@@ -469,11 +498,19 @@ class Paysafe_Gateway_Init extends WC_Payment_Gateway {
 		$environment                 = ( $this->environment == "yes" ) ? 'TEST' : 'LIVE';
 		if ( is_user_logged_in() || isset( $_POST['createaccount'] ) ) {
 			$tokenRequest = ( $this->saved_cards == "yes" ) ? 'token' : 'cc';
+
+			if (!$saveCardChecked) {
+				$tokenRequest = 'cc';
+			}
 		} else {
 			$tokenRequest = 'guestaccount';
 		}
 
-		if ( $this->threedsecure === 'yes' && $paysafeMethod == "mer_paysafe_credit_card" ) {
+		if ( $paysafeMethod == 'mer_paysafe_credit_card' && $is_subscription ) {
+			$tokenRequest = 'token';
+		}
+
+		if ( $this->threedsecure === 'yes') {
 			$threed_auth_id = wc_clean( $_POST['paysafe_threed_auth_id'] );
 
 			if ( empty( $threed_auth_id ) ) {
@@ -513,13 +550,26 @@ class Paysafe_Gateway_Init extends WC_Payment_Gateway {
 
 		} else {
 			$tokenKeyId      = str_replace( array( ' ', '-' ), '', $_POST['mer_paysafe-token-number'] );
-			$paysafe_request = $paysafe_request_object->get_request_paysafe_url_token( $paysafeApiKeyId, $paysafeApiKeySecret, $paysafeAccountNumber, $environment, $totalAmount, $currencyBaseUnitsMultiplier, $tokenKeyId, $authCaptureSettlement, $order_id );
+			$paysafe_request = $paysafe_request_object->get_request_paysafe_url_token( $paysafeApiKeyId, $paysafeApiKeySecret, $paysafeAccountNumber, $environment, $totalAmount, $currencyBaseUnitsMultiplier, $tokenKeyId, $authCaptureSettlement, $order_id, $threed_auth_data );
 		}
 		//echo "Response Code: ".$paysafe_request['responsecode'];
 		if ( $paysafe_request['responsecode'] == '0' ) {
 			$transactionID        = $paysafe_request['transaction_id'];
 			$this->transaction_id = $transactionID;
 			$status               = $paysafe_request['status'];
+
+			if ( $this->is_renewal( $order_id ) ) {
+			} else {
+				if ( function_exists( 'wcs_get_subscriptions_for_renewal_order' ) ) {
+					$subscriptions = wcs_get_subscriptions_for_renewal_order( $order_id );
+					foreach ( $subscriptions as $subscription ) {
+						/** @var WC_Subscription $subscription */
+						$subscription->update_meta_data('paysafe_init_transaction_id', $transactionID);
+					}
+				}
+			}
+
+
 			update_post_meta( $order->get_id(), '_paysafe_status', $status );
 			update_post_meta( $order->get_id(), '_paysafe_transaction_id', $transactionID );
 			if ( $tokenRequest === "token" && $paysafeMethod == "mer_paysafe_credit_card" ) {
@@ -528,6 +578,9 @@ class Paysafe_Gateway_Init extends WC_Payment_Gateway {
 				$paysafe_trasc_store = array(
 					"paysafe_cust_id"           => get_current_user_id(),
 					"paysafe_cardnum"           => $storeCc,
+					"paysafe_cardid"           	=> $paysafe_request['cardid'],
+					"paysafe_profileid"           	=> $paysafe_request['profileid'],
+					"paysafe_cardpaymenttoken"           	=> $paysafe_request['cardpaymenttoken'],
 					"paysafe_tokenno"           => $tokenkeyID,
 					"paysafe_token_request"     => $tokenRequest,
 					"paysafe_date_of_card_used" => date( "jS F Y" )

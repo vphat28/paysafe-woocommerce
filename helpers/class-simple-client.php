@@ -7,6 +7,24 @@ class Paysafe_Simple_Http_Client {
 		}
 	}
 
+	public function simpleGet($url, $authorization) {
+		$ch = curl_init();
+
+		curl_setopt($ch, CURLOPT_URL, $url);
+		curl_setopt($ch, CURLOPT_RETURNTRANSFER, TRUE);
+		curl_setopt($ch, CURLOPT_HEADER, FALSE);
+
+		curl_setopt($ch, CURLOPT_HTTPHEADER, array(
+			"Content-Type: application/json",
+			"Authorization: " . $authorization
+		));
+
+		$response = curl_exec($ch);
+		curl_close($ch);
+
+		return ($response);
+	}
+
 	public function simplePost($url, $header, $json) {
 		$curl = curl_init();
 

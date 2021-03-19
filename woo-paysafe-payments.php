@@ -17,5 +17,17 @@ define( 'MER_PAYSAFE_IMG', plugin_dir_url( __FILE__ ).'assets/images' );
 define( 'MER_PAYSAFE_CSS', plugin_dir_url( __FILE__ ).'assets/css' );
 define( 'MER_PAYSAFE_JS', plugin_dir_url( __FILE__ ).'assets/js' );
 /**----- End -----  **/
+function wc_paysafe_log($data) {
+	if (!defined('WP_DEBUG') || WP_DEBUG === false) {
+		return;
+	}
+
+	if (!is_string($data)) {
+		$data = print_r($data, 1);
+	}
+
+	$data .= PHP_EOL;
+	file_put_contents(WP_CONTENT_DIR . '/uploads/paysafe.log', $data, FILE_APPEND);
+}
 require 'controllers/class-paysafe-payments-main.php';
 register_activation_hook( __FILE__, array('Paysafe_Payments_Main', 'install') );

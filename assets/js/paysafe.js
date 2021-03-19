@@ -56,10 +56,6 @@ jQuery(function($) {
             return false;
         },
         placeOrder: function () {
-            if ($('#payment_method_token').is(':checked') == true) {
-                $('#place_order').click();
-            }
-
             if (window.PaysafeWooCommerceIntegrationOption.threedsecurepaysafe == 'no') {
                 $('#place_order').click();
                 return;
@@ -97,7 +93,17 @@ jQuery(function($) {
                 });
         },
 
-        device_finger_printing: function () {
+        submit_error: function( error_message ) {
+            var wc_checkout_form = this.$checkout_form;
+            $( '.woocommerce-NoticeGroup-checkout, .woocommerce-error, .woocommerce-message' ).remove();
+            wc_checkout_form.prepend( '<div class="woocommerce-NoticeGroup woocommerce-NoticeGroup-checkout">' + error_message + '</div>' ); // eslint-disable-line max-len
+            wc_checkout_form.removeClass( 'processing' ).unblock();
+            wc_checkout_form.find( '.input-text, select, input:checkbox' ).trigger( 'validate' ).blur();
+            this.scroll_to_notices();
+            $( document.body ).trigger( 'checkout_error' , [ error_message ] );
+        },
+
+        device_finger_printing: function (cardBin, token_id) {
             fullScreenLoader.startLoader();
             var paysafe3ds = window.paysafe;
             var self = this;
@@ -110,7 +116,7 @@ jQuery(function($) {
                 environment: environment,
                 accountId: window.PaysafeWooCommerceIntegrationOption.accountid,
                 card: {
-                    cardBin: self.creditCardNumber().substring(0, 8)
+                    cardBin: cardBin
                 }
             }, function (deviceFingerprintingId, error) {
                 if (typeof deviceFingerprintingId === 'undefined') {
@@ -119,6 +125,29 @@ jQuery(function($) {
                     return;
                 }
                 var url = PaysafeWooCommerceIntegrationOption.auth_endpoint;
+                if (typeof token_id === 'undefined') {
+                    var authorise_params = {
+                        "deviceFingerprintingId": deviceFingerprintingId,
+                        "billing_first_name": $('#billing_first_name').val(),
+                        "billing_last_name": $('#billing_last_name').val(),
+                        "card": {
+                            "cardExpiry": {
+                                "month": self.creditCardExpMonth(),
+                                "year": self.creditCardExpYear()
+                            },
+                            "cardNum": self.creditCardNumber()
+                        },
+                    };
+                } else {
+                    var authorise_params = {
+                        "deviceFingerprintingId": deviceFingerprintingId,
+                        "billing_first_name": $('#billing_first_name').val(),
+                        "billing_last_name": $('#billing_last_name').val(),
+                        "card": {
+                            "paymentToken": token_id
+                        },
+                    }
+                }
                 var request = $.ajax({
                         url: url,
                         method: "POST",
@@ -127,18 +156,7 @@ jQuery(function($) {
                             /* Authorization header */
                             xhr.setRequestHeader("Authorization", "Basic " + PaysafeWooCommerceIntegrationOption.base64apikey);
                         },
-                        data: {
-                            "deviceFingerprintingId": deviceFingerprintingId,
-                            "billing_first_name": $('#billing_first_name').val(),
-                            "billing_last_name": $('#billing_last_name').val(),
-                            "card": {
-                                "cardExpiry": {
-                                    "month": self.creditCardExpMonth(),
-                                    "year": self.creditCardExpYear()
-                                },
-                                "cardNum": self.creditCardNumber()
-                            },
-                        }
+                        data: authorise_params
                     })
                         .done(function (data) {
                             console.log(data);
@@ -171,16 +189,6 @@ jQuery(function($) {
             });
         },
 
-        submit_error: function( error_message ) {
-            var wc_checkout_form = this.$checkout_form;
-            $( '.woocommerce-NoticeGroup-checkout, .woocommerce-error, .woocommerce-message' ).remove();
-            wc_checkout_form.prepend( '<div class="woocommerce-NoticeGroup woocommerce-NoticeGroup-checkout">' + error_message + '</div>' ); // eslint-disable-line max-len
-            wc_checkout_form.removeClass( 'processing' ).unblock();
-            wc_checkout_form.find( '.input-text, select, input:checkbox' ).trigger( 'validate' ).blur();
-            this.scroll_to_notices();
-            $( document.body ).trigger( 'checkout_error' , [ error_message ] );
-        },
-
         scroll_to_notices: function() {
             var scrollElement           = $( '.woocommerce-NoticeGroup-updateOrderReview, .woocommerce-NoticeGroup-checkout' );
 
@@ -193,7 +201,19 @@ jQuery(function($) {
             $('#place_order').hide();
             $('#paysafe_place_order').show();
         },
-
+        authorise_token: function () {
+            const self = this;
+            const token_id = $('input[name=mer_paysafe-token-number]').val();
+            $.post( wc_checkout_params.ajax_url , {
+                token_id : token_id,
+                action: 'paysafe_woo_get_card'
+            })
+                .done(function( data ) {
+                    if (data.length > 0) {
+                        self.device_finger_printing(data, token_id);
+                    }
+                });
+        },
         hidePaysafeButton: function () {
             $('#paysafe_place_order').hide();
             $('#place_order').show();
@@ -202,10 +222,6 @@ jQuery(function($) {
             var self = this;
 
             $('.checkout.woocommerce-checkout').on('checkout_place_order', function () {
-                if ($('#payment_method_token').is(':checked') == true) {
-                    return true;
-                }
-
                 if (PaysafeWooCommerceIntegrationOption.threedsecurepaysafe != 'yes') {
                     return true;
                 }
@@ -245,12 +261,12 @@ jQuery(function($) {
                 fullScreenLoader.startLoader();
 
                 if ($('#payment_method_token').is(':checked') == true) {
-                    self.placeOrder();
+                    self.authorise_token();
                     return;
                 }
 
                 if (PaysafeWooCommerceIntegrationOption.threedsecurepaysafe == 'yes') {
-                    self.device_finger_printing();
+                    self.device_finger_printing(self.creditCardNumber().substring(0, 8));
                 } else {
                     self.placeOrder();
                 }

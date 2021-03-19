@@ -37,8 +37,7 @@ class Paysafe_Subscriptions_Gateway extends Paysafe_Gateway_Init {
 		if ( ! function_exists( 'wcs_order_contains_subscription' ) ) {
 			return;
 		}
-
-		$order           = wc_get_order( $order_id );
+		
 		$subscriptions   = wcs_get_subscriptions_for_order( $order_id );
 		$is_subscription = wcs_order_contains_subscription( $order_id );
 
@@ -47,6 +46,10 @@ class Paysafe_Subscriptions_Gateway extends Paysafe_Gateway_Init {
 		}
 
 		foreach ( $subscriptions as $subscription ) {
+			if ( !$this->is_renewal( $order_id ) ) {
+				/** @var WC_Subscription $subscription */
+				$subscription->update_meta_data('paysafe_init_transaction_id', get_post_meta($order_id, '_paysafe_transaction_id', true));
+			}
 			$subscription->payment_complete();
 		}
 	}
